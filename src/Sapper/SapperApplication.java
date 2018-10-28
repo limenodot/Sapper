@@ -13,6 +13,7 @@ import javafx.scene.layout.RowConstraints;
 import javafx.stage.Stage;
 
 import java.io.InputStream;
+import java.util.List;
 
 import static javafx.scene.input.MouseButton.PRIMARY;
 
@@ -22,7 +23,7 @@ public class SapperApplication extends Application {
     public static final int WINDOW_HIGHT = 640;
     public static final int X_CELLS = 10;
     public static final int Y_CELLS = 10;
-    public static final double RAND_CONST = 0.05;
+    public static final double RAND_CONST = 0.10;
 
     public ButtonMine[][] minefield = new ButtonMine[X_CELLS][Y_CELLS];
 
@@ -34,13 +35,15 @@ public class SapperApplication extends Application {
 
         for (int x = 0; x < X_CELLS; x++)
             for (int y = 0; y < Y_CELLS; y++) {
-                ButtonMine button = new ButtonMine(x, y, Math.random() < RAND_CONST, false, false, 0);
+                ButtonMine button = new ButtonMine(x, y, Math.random() < RAND_CONST, false, false, 0, null);
+                minefield[x][y] = button;
+                List<ButtonMine> neighbours = button.getBombsAround(minefield);
+                button.setNeighbours(neighbours);
+
                 button.setMaxWidth(Double.MAX_VALUE);
                 button.setMaxHeight(Double.MAX_VALUE);
                 button.setStyle("-fx-background-color: lightgrey");
                 button.setStyle("-fx-border-color: grey");
-
-                minefield[x][y] = button;
 
                 root.getColumnConstraints().add(new ColumnConstraints(60));
                 root.getRowConstraints().add(new RowConstraints(65));
@@ -50,7 +53,7 @@ public class SapperApplication extends Application {
         for (int x = 0; x < X_CELLS; x++)
             for (int y = 0; y < Y_CELLS; y++) {
                 ButtonMine button = minefield[x][y];
-                long bombs = button.countBombsAround(button, minefield).stream().filter(t -> t.isMined).count();
+                long bombs = button.getBombsAround(minefield).stream().filter(t -> t.isMined).count();
                 button.setBombsAround((int) bombs);
             }
 
@@ -58,12 +61,13 @@ public class SapperApplication extends Application {
         for (int x = 0; x < X_CELLS; x++)
             for (int y = 0; y < Y_CELLS; y++) {
                 ButtonMine button = minefield[x][y];
+                List<ButtonMine> n = button.neighbours;
                 button.setOnMouseClicked(new EventHandler<MouseEvent>() {
                     @Override
-                    public void handle(MouseEvent event) {
+                    public void handle(MouseEvent event) throws NullPointerException {
                         MouseButton mouseButton = event.getButton();
                         if (mouseButton == PRIMARY) {
-                            if (button.isMined() == true) {
+                            if (button.isMined()) {
                                 InputStream input = getClass().getResourceAsStream("/Pics/boom.png");
                                 Image image = new Image(input);
                                 ImageView imageView = new ImageView(image);
@@ -71,11 +75,10 @@ public class SapperApplication extends Application {
                                 button.setStyle("-fx-background-color: white; -fx-border-color: grey");
                                 button.setActivated(true);
                                 gameover();
-                            } else {
-                                if (button.getBombsAround() != 0) {
-                                    int number = button.getBombsAround();
+                            } else { button.press(minefield);
+                                /*if (button.getNumberOfBombsAround() != 0) {
+                                    int number = button.getNumberOfBombsAround();
                                     String path = String.format("/Pics/%s.png", number);
-
                                     InputStream input = getClass().getResourceAsStream(path);
                                     Image image = new Image(input);
                                     ImageView imageView = new ImageView(image);
@@ -84,9 +87,15 @@ public class SapperApplication extends Application {
                                     button.setActivated(true);
                                 } else {
                                     button.setStyle("-fx-background-color: white; -fx-border-color: grey");
+                                    try {
+                                        button.getNeighbours().forEach(ButtonMine::press(minefield));
+                                    } catch (NullPointerException npe) {
+                                        System.out.println(" ");
+                                    } catch (StackOverflowError soe) {
+                                        System.out.println(" ");
+                                    }
                                     button.setActivated(true);
-                                    button.press(minefield);
-                                }
+                                }*/
                             }
                         } else {
                             if (button.isActivated() == false) {
@@ -102,7 +111,6 @@ public class SapperApplication extends Application {
                 });
             }
 
-
         primaryStage.setScene(scene);
         primaryStage.setTitle("Sapper");
         primaryStage.setResizable(false);
@@ -113,7 +121,7 @@ public class SapperApplication extends Application {
         for (int i = 0; i < X_CELLS; i++)
             for (int j = 0; j < Y_CELLS; j++) {
                 ButtonMine buttonMine = minefield[i][j];
-                if (buttonMine.isMined() == true && buttonMine.isActivated() == false) {
+                if (buttonMine.isMined() && buttonMine.isActivated() == false) {
                     Image image1 = new Image("/Pics/bomb.png");
                     ImageView imageView1 = new ImageView(image1);
                     buttonMine.setGraphic(imageView1);

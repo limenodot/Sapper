@@ -4,6 +4,7 @@ import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,15 +17,17 @@ public class ButtonMine extends Button {
     protected boolean isMined;
     protected boolean isActivated;
     protected boolean isFlagged;
-    protected int bombsAround = 0;
+    protected int bombsAround;
+    protected List<ButtonMine> neighbours;
 
-    public ButtonMine(int xPos, int yPos, boolean isMined, boolean isActivated, boolean isFlagged, int bombsAround) {
+    public ButtonMine(int xPos, int yPos, boolean isMined, boolean isActivated, boolean isFlagged, int bombsAround, List<ButtonMine> neighbours) {
         this.xPos = xPos;
         this.yPos = yPos;
         this.isMined = isMined;
         this.isActivated = isActivated;
         this.isFlagged = isFlagged;
         this.bombsAround = bombsAround;
+        this.neighbours = neighbours;
     }
 
     public int getxPos() {
@@ -71,11 +74,23 @@ public class ButtonMine extends Button {
         return bombsAround;
     }
 
+    public List<ButtonMine> getNeighbours() {
+        return neighbours;
+    }
+
+    public void setNeighbours(List<ButtonMine> neighbours) {
+        this.neighbours = neighbours;
+    }
+
+    public int getNumberOfBombsAround() {
+        return bombsAround;
+    }
+
     public void setBombsAround(int bombsAround) {
         this.bombsAround = bombsAround;
     }
 
-    public List<ButtonMine> countBombsAround(ButtonMine button, ButtonMine[][] minefield) {
+    public List<ButtonMine> getBombsAround(ButtonMine[][] minefield) {
         List<ButtonMine> neighbours = new ArrayList<>();
 
         int[] points = new int[]{
@@ -105,40 +120,47 @@ public class ButtonMine extends Button {
     }
 
     public void press(ButtonMine[][] minefield) {
-        ButtonMine b = minefield[this.getxPos()][this.getyPos()];
+        if (this.getNumberOfBombsAround() != 0) {
+            String path = String.format("/Pics/%s.png", this.getNumberOfBombsAround());
+            InputStream input = getClass().getResourceAsStream(path);
+            Image image = new Image(input);
+            ImageView imageView = new ImageView(image);
+            this.setStyle("-fx-background-color: white; -fx-border-color: grey");
+            this.setGraphic(imageView);
+            this.setActivated(true);
+        } else {
 
-        int[] points = new int[]{
-                -1, -1,
-                -1, 0,
-                -1, 1,
-                0, -1,
-                0, 1,
-                1, 1,
-                1, 0,
-                1, -1
-        };
-
-        for (int i = 0; i < points.length; i++) {
-            int dx = points[i];
-            int dy = points[++i];
-            int newX = b.xPos + dx;
-            int newY = b.yPos + dy;
-
-            if (newX >= 0 && newX < X_CELLS
-                    && newY >= 0 && newY < Y_CELLS) {
-                ButtonMine target = minefield[newX][newY];
-                if (target.getBombsAround() == 0) {
-                    target.setStyle("-fx-background-color: white");
-                    target.press(minefield);
+            this.setStyle("-fx-background-color: white; -fx-border-color: grey");
+            int[] points = new int[]{
+                    -1, -1,
+                    -1, 0,
+                    -1, 1,
+                    0, -1,
+                    0, 1,
+                    1, 1,
+                    1, 0,
+                    1, -1
+            };
+            for (int i = 0; i < points.length; i++) {
+                int dx = points[i];
+                int dy = points[++i];
+                int newX = this.xPos + dx;
+                int newY = this.yPos + dy;
+                if (newX >= 0 && newX < X_CELLS && newY >= 0 && newY < Y_CELLS) {
+                    System.out.printf("Current position before: %d %d\n", newX, newY);
+                    if (minefield[newX][newY].isActivated == false) {
+                        try {
+                            minefield[newX][newY].press(minefield);
+                        } catch (ArrayIndexOutOfBoundsException aiobe) {
+                            System.out.println(" ");
+                        }
+                        System.out.printf("Current position after: %d %d\n", newX, newY);
+                    }
                 }
-                else {
-                    String path = String.format("/Pics/%s.png", target.getBombsAround());
-                    Image image1 = new Image(path);
-                    ImageView imageView1 = new ImageView(image1);
-                    b.setGraphic(imageView1);
-                }
+                this.setActivated(true);
             }
 
+            return;
         }
     }
 }
