@@ -1,8 +1,10 @@
 package application;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -10,6 +12,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.InputStream;
@@ -23,7 +27,7 @@ public class SapperApplication extends Application {
     public static final int WINDOW_HIGHT = 640;
     public static final int X_CELLS = 10;
     public static final int Y_CELLS = 10;
-    public static final double RAND_CONST = 0.10;
+    public static double RAND_CONST = 0.20;
 
     public ButtonMine[][] minefield = new ButtonMine[X_CELLS][Y_CELLS];
 
@@ -50,6 +54,7 @@ public class SapperApplication extends Application {
                 root.add(button, x, y);
             }
 
+
         for (int x = 0; x < X_CELLS; x++)
             for (int y = 0; y < Y_CELLS; y++) {
                 ButtonMine button = minefield[x][y];
@@ -74,28 +79,9 @@ public class SapperApplication extends Application {
                                 button.setGraphic(imageView);
                                 button.setStyle("-fx-background-color: white; -fx-border-color: grey");
                                 button.setActivated(true);
-                                gameover();
-                            } else { button.press(minefield);
-                                /*if (button.getNumberOfBombsAround() != 0) {
-                                    int number = button.getNumberOfBombsAround();
-                                    String path = String.format("/Pics/%s.png", number);
-                                    InputStream input = getClass().getResourceAsStream(path);
-                                    Image image = new Image(input);
-                                    ImageView imageView = new ImageView(image);
-                                    button.setGraphic(imageView);
-                                    button.setStyle("-fx-background-color: white; -fx-border-color: grey");
-                                    button.setActivated(true);
-                                } else {
-                                    button.setStyle("-fx-background-color: white; -fx-border-color: grey");
-                                    try {
-                                        button.getNeighbours().forEach(ButtonMine::press(minefield));
-                                    } catch (NullPointerException npe) {
-                                        System.out.println(" ");
-                                    } catch (StackOverflowError soe) {
-                                        System.out.println(" ");
-                                    }
-                                    button.setActivated(true);
-                                }*/
+                                gameover(primaryStage);
+                            } else {
+                                button.press(minefield);
                             }
                         } else {
                             if (button.isActivated() == false) {
@@ -117,7 +103,7 @@ public class SapperApplication extends Application {
         primaryStage.show();
     }
 
-    public void gameover() {
+    public void gameover(Stage primaryStage) {
         for (int i = 0; i < X_CELLS; i++)
             for (int j = 0; j < Y_CELLS; j++) {
                 ButtonMine buttonMine = minefield[i][j];
@@ -128,6 +114,34 @@ public class SapperApplication extends Application {
                     buttonMine.setStyle("-fx-background-color: white; -fx-border-color: grey");
                 }
             }
+
+        Label secondLabel = new Label("Game over :(");
+        StackPane secondaryLayout = new StackPane();
+        secondaryLayout.getChildren().add(secondLabel);
+        Scene secondScene = new Scene(secondaryLayout, 230, 100);
+        Stage secondaryStage = new Stage();
+        secondaryStage.initModality(Modality.WINDOW_MODAL);
+        secondaryStage.initOwner(primaryStage);
+        secondaryStage.setTitle("Sapper");
+        secondaryStage.setScene(secondScene);
+        secondaryStage.show();
+
+        secondaryStage.setOnCloseRequest(e -> Platform.exit());
+    }
+
+    public void youwin(Stage primaryStage) {
+        Label secondLabel = new Label("You win!!!\nCongratulations!");
+        StackPane secondaryLayout = new StackPane();
+        secondaryLayout.getChildren().add(secondLabel);
+        Scene secondScene = new Scene(secondaryLayout, 230, 100);
+        Stage secondaryStage = new Stage();
+        secondaryStage.initModality(Modality.WINDOW_MODAL);
+        secondaryStage.initOwner(primaryStage);
+        secondaryStage.setTitle("Sapper");
+        secondaryStage.setScene(secondScene);
+        secondaryStage.show();
+
+        secondaryStage.setOnCloseRequest(e -> Platform.exit());
     }
 
     public static void main(String[] args) {
